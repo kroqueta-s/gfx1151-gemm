@@ -54,19 +54,38 @@ def parse_shape(text: str) -> tuple[int, int, int, int, str]:
 
 
 def bench_one(
-    m: int, n: int, k: int, batch: int, dtype_name: str, warmup: int, iters: int, blocks: int
+    m: int,
+    n: int,
+    k: int,
+    batch: int,
+    dtype_name: str,
+    warmup: int,
+    iters: int,
+    blocks: int,
+    layout: str = "nn",
 ) -> dict[str, Any]:
-    """Run one shape and return per-block TFLOPS with the median and range."""
+    """Run one shape and return per-block TFLOPS with the median and range.
+
+    `layout="nt"` hands B over as a transposed view, the way `F.linear` passes
+    a weight matrix. Backends pick different kernels for it, so benchmark the
+    layout your workload actually uses.
+    """
     import torch
 
     dtype = getattr(torch, DTYPES[dtype_name])
     if batch > 1:
         a = torch.randn(batch, m, k, device="cuda", dtype=dtype)
-        b = torch.randn(batch, k, n, device="cuda", dtype=dtype)
+        if layout == "nt":
+            b = torch.randn(batch, n, k, device="cuda", dtype=dtype).transpose(1, 2)
+        else:
+            b = torch.randn(batch, k, n, device="cuda", dtype=dtype)
         op = torch.bmm
     else:
         a = torch.randn(m, k, device="cuda", dtype=dtype)
-        b = torch.randn(k, n, device="cuda", dtype=dtype)
+        if layout == "nt":
+            b = torch.randn(n, k, device="cuda", dtype=dtype).t()
+        else:
+            b = torch.randn(k, n, device="cuda", dtype=dtype)
         op = torch.mm
     for _ in range(warmup):
         op(a, b)
@@ -93,6 +112,7 @@ def bench_one(
         "k": k,
         "batch": batch,
         "dtype": dtype_name,
+        "layout": layout,
         "blocks_tflops": tflops,
         "median_tflops": ordered[len(ordered) // 2],
         "min_tflops": ordered[0],
@@ -108,6 +128,13 @@ def main() -> int:
         required=True,
         metavar="M,N,K[,B][,dtype]",
         help="repeatable; dtype is one of fp16/bf16/fp32, default fp16",
+    )
+    parser.add_argument(
+        "--layout",
+        choices=("nn", "nt", "both"),
+        default="nn",
+        help="how B is laid out: contiguous (nn), transposed view as F.linear passes "
+        "weights (nt), or both",
     )
     parser.add_argument("--warmup", type=int, default=10)
     parser.add_argument("--iters", type=int, default=100, help="calls per timed block")
@@ -135,16 +162,18 @@ def main() -> int:
     except (AttributeError, RuntimeError):
         pass
 
+    layouts = ("nn", "nt") if args.layout == "both" else (args.layout,)
     results = []
     for m, n, k, batch, dtype_name in shapes:
-        r = bench_one(m, n, k, batch, dtype_name, args.warmup, args.iters, args.blocks)
-        results.append(r)
-        print(
-            f"M={m} N={n} K={k} B={batch} {dtype_name}: "
-            f"median {r['median_tflops']} TFLOPS "
-            f"(range {r['min_tflops']}-{r['max_tflops']}, blocks {r['blocks_tflops']})",
-            flush=True,
-        )
+        for layout in layouts:
+            r = bench_one(m, n, k, batch, dtype_name, args.warmup, args.iters, args.blocks, layout)
+            results.append(r)
+            print(
+                f"M={m} N={n} K={k} B={batch} {dtype_name} {layout}: "
+                f"median {r['median_tflops']} TFLOPS "
+                f"(range {r['min_tflops']}-{r['max_tflops']}, blocks {r['blocks_tflops']})",
+                flush=True,
+            )
 
     run = {
         "date": datetime.now(UTC).isoformat(timespec="seconds"),

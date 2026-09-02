@@ -26,6 +26,9 @@ local LLMs included.
 - [`docs/profiles.md`](docs/profiles.md) — measured GEMM profiles of the three
   3D-generation pipelines named above, and how much their dominant shapes
   overlap.
+- [`docs/hipblaslt.md`](docs/hipblaslt.md) — rocBLAS against hipBLASLt on the
+  shapes those pipelines actually run: the Lt path works on gfx1151 under
+  Windows, wins by 8× on skinny GEMMs, and loses on fat ones.
 
 ## What is known about gfx1151 on Windows
 
@@ -63,8 +66,8 @@ unreachable.
 
 The `rocm_sdk_libraries` wheel that backs torch 2.9.1+rocm7.2.1 carries a
 hipBLASLt kernel library for gfx1151 (95 files, alongside gfx110x/gfx120x).
-Whether the Lt path actually engages, and what it is worth, is measured in
-[`docs/profiles.md`](docs/profiles.md). Torch selects it with
+The Lt path actually engages, and what it is worth is measured in
+[`docs/hipblaslt.md`](docs/hipblaslt.md). Torch selects it with
 `TORCH_BLAS_PREFER_HIPBLASLT=1` set **before torch is imported**; verify it
 did not fall back by logging with `HIPBLASLT_LOG_MASK=32` and
 `HIPBLASLT_LOG_FILE`.
