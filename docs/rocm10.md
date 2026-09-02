@@ -1,9 +1,10 @@
 # ROCm 10.0 wheels on gfx1151 / Windows: what changes, what breaks
 
-**Environment:** the same machine as [profiles.md](profiles.md), upgraded from
-torch 2.9.1+rocm7.2.1 to **torch 2.13.0+rocm10.0.0** (`whl-next` channel),
-Adrenalin driver unchanged (2026-08, ROCm 7.2.1 era — the wheels bundle their
-own runtime). Measured 2026-09-02.
+**Environment:** the same machine as [profiles.md](profiles.md) — ASUS
+ProArt PX13 (HN7306EA-AI9641W), Ryzen AI MAX+ 395 / gfx1151, factory power
+limits — upgraded from torch 2.9.1+rocm7.2.1 to **torch 2.13.0+rocm10.0.0**
+(`whl-next` channel), Adrenalin driver unchanged (2026-08, ROCm 7.2.1 era —
+the wheels bundle their own runtime). Measured 2026-09-02.
 
 ## Install: four traps, in the order they bite
 

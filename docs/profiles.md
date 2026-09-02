@@ -1,7 +1,9 @@
 # GEMM profiles of three 3D-generation pipelines on gfx1151 / Windows
 
-**Environment (identical for all three):** Strix Halo (Radeon 8060S, gfx1151,
-32 GB dedicated VRAM), Windows 11, ROCm 7.2.1, torch 2.9.1+rocm7.2.1,
+**Environment (identical for all three):** ASUS ProArt PX13
+(HN7306EA-AI9641W) — Ryzen AI MAX+ 395 / Strix Halo, Radeon 8060S (gfx1151,
+32 GB dedicated VRAM), a 13-inch laptop at factory power limits — Windows
+11, ROCm 7.2.1, torch 2.9.1+rocm7.2.1,
 Python 3.12.10, `TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL=1`, rocBLAS backend
 (no hipBLASLt), measured 2026-09-02. Reference fp16 GEMM
 alongside every run: 21–25 TFLOPS at 2048³, 29–31 TFLOPS at 4096³.

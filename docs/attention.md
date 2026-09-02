@@ -5,7 +5,9 @@ in attention than in GEMM (Hi3DGen's dominant stage is 54 % attention), so
 the attention ceiling matters at least as much as the GEMM one. Measured
 2026-09-03 with [`bench_sdpa.py`](../bench_sdpa.py): fp16
 `F.scaled_dot_product_attention`, AOTriton flash backend
-(`TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL=1`), torch 2.13.0+rocm10.0.0,
+(`TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL=1`), torch 2.13.0+rocm10.0.0, on
+the same machine as everything here (ASUS ProArt PX13, Ryzen AI MAX+ 395,
+factory power limits — see [ceiling.md](ceiling.md)),
 5 processes × 5 blocks × 50 calls, medians; FLOPs counted as the two matmuls
 (4·B·H·SQ·SKV·D).
 

@@ -1,6 +1,8 @@
 # hipBLASLt on gfx1151 / Windows: measured, and it is real
 
-**Environment:** Strix Halo (Radeon 8060S, gfx1151), Windows 11, ROCm 7.2.1,
+**Environment:** ASUS ProArt PX13 (HN7306EA-AI9641W) — Ryzen AI MAX+ 395 /
+Strix Halo, Radeon 8060S (gfx1151), a 13-inch laptop at factory power
+limits — Windows 11, ROCm 7.2.1,
 torch 2.9.1+rocm7.2.1, measured 2026-09-02 with
 [`bench_gemm.py`](../bench_gemm.py) (fp16, warmup 10, 5 blocks × 100 calls,
 device-event timing, medians reported).

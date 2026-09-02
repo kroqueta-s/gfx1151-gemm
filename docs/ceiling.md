@@ -4,8 +4,10 @@ Three GEMM backends (rocBLAS 7.2.1, hipBLASLt 7.2.1, the ROCm 10.0 default
 path) all converge on 25–31 TFLOPS fp16 for well-proportioned shapes and none
 exceeds ~31. This page pins down what that ceiling is. Method as everywhere
 in this repository: 5 processes × 5 blocks × 100 calls, medians, clock
-recorded by [`gpuclock.py`](../gpuclock.py). Environment: torch
-2.13.0+rocm10.0.0, Windows 11, measured 2026-09-03.
+recorded by [`gpuclock.py`](../gpuclock.py). Environment: ASUS ProArt PX13
+(HN7306EA-AI9641W) — Ryzen AI MAX+ 395, Radeon 8060S (gfx1151, 40 CU) —
+**a 13-inch laptop at its factory power limits**, torch 2.13.0+rocm10.0.0,
+Windows 11, measured 2026-09-03.
 
 ## It is not bandwidth
 
@@ -34,6 +36,13 @@ The marketing figure for this silicon — 59.4 TFLOPS fp16 — assumes 2.9 GHz
 driver holds it much lower: median 1 914 MHz, max 2 126 MHz, at 18–25 W GPU
 power, across the whole K sweep.**
 
+That 18–25 W is this machine speaking, not the architecture: the PX13 is a
+13-inch convertible and its firmware runs the chip at ASUS's stock power
+limits (unmodified here). Strix Halo is shipped in chassis with far larger
+power budgets, so a bigger machine should sustain higher clocks and land
+this whole analysis at different numbers — the *method* (measure the
+sustained clock, multiply by 20.48 TFLOPS/GHz) transfers; the 39 does not.
+
 At the measured sustained clock the attainable peak is:
 
 ```
@@ -50,8 +59,9 @@ Cross-checks:
 - The externally reported 41.3 TFLOPS from a hand-tuned WMMA kernel on Linux
   (ROCm 7.14, same silicon) is consistent with this model: it needs either
   ~2.4 GHz sustained at ~85 % efficiency or ~2.0 GHz at 100 % — i.e. **the
-  Linux result is largely a clock/power-management result, not purely a
-  kernel-quality result.**
+  Linux result is largely a clock/power result, not purely a kernel-quality
+  result** (and the platform behind it, with its own power budget, is not
+  this 13-inch laptop; the comparison spans OS *and* chassis).
 
 ## What this means for a hand-written kernel on Windows
 
