@@ -80,10 +80,12 @@ what the same silicon does at 4096³.
 - **Hunyuan3D shares nothing with them.** A kernel that serves all three needs
   shape dispatch from day one.
 - **The two workloads want different things.** Hunyuan3D wants a classic
-  large-tile fp16 GEMM (its shapes are already at 21–27 TFLOPS; the headroom
-  to a hand-tuned WMMA kernel's 41–46 is ~1.7×). The TRELLIS family's largest
-  single win is not a big-tile GEMM at all but the **N=128 skinny GEMM at
-  1 TFLOPS**, plus attention and elementwise work that no GEMM kernel touches.
+  large-tile fp16 GEMM (its shapes are already at 21–27 TFLOPS — and the
+  realistic headroom above that on this platform is set by the sustained
+  clock, not by kernel quality; see [ceiling.md](ceiling.md)). The TRELLIS
+  family's largest single win is not a big-tile GEMM at all but the **N=128
+  skinny GEMM at 1 TFLOPS**, plus attention and elementwise work that no
+  GEMM kernel touches.
 
 Per-stage detail lives in each runner's repository
 (`docs/gemm_profile.md`); raw JSON stays with the machine that measured it.

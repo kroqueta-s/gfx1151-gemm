@@ -66,35 +66,54 @@ that the pipelines use):
 | 4096³ | **30.8** | 24.2 | 30.2 |
 
 The library ceiling on this silicon is **~30 TFLOPS** either way; what ROCm 10
-fixed is the floor. The two small-N decode shapes regressed slightly; they are
-worth fractions of a second per generation.
+fixed is the floor (why the ceiling sits where it does:
+[ceiling.md](ceiling.md)). The two small-N decode shapes regressed slightly;
+they are worth fractions of a second per generation.
+
+**Layouts:** rocBLAS 7.2.1 swung up to 1.6× between nn and nt on the same
+shape; on 10.0 the asymmetry mostly closed (4096³: 30.2 nn / 29.4 nt). Where
+it survives, it is ≤9 % and confined to shapes with small stage shares —
+`F.linear` passes weights as nt, and pre-transposing them to force nn would
+buy ~+9 % on Hunyuan3D's MLP-up GEMM (nn 30.1 / nt 27.7) and ~+6 % on the
+TRELLIS-family MLP-down, which works out to **well under 1 % of any stage**.
+Not worth the weight duplication; measured and declined.
 
 Reference GEMM alongside every run: 30.2–30.4 at 2048³, 30.6–30.9 at 4096³.
 
-## End to end: 1.13–1.68× per pipeline
+## End to end: 1.13–1.79× per pipeline
 
-Second-run stage walls (first runs pay MIOpen tuning), hipBLASLt preference
-on (harmless here, still needed on 7.2.1):
+The 10.0 column is the **median of 5 runs** (each a fresh process, tuned
+MIOpen caches verified present beforehand, a 4096³ reference GEMM before and
+after every run — all stayed within 29.7–31.5 TFLOPS — and a `gpuclock.py`
+trace during). The 7.2.1 columns are single measurements from before the
+upgrade and are labelled as such. hipBLASLt preference on everywhere
+(a no-op on 10.0, still needed on 7.2.1).
 
-| Pipeline | Stage | 7.2.1 rocBLAS | 7.2.1 +hipBLASLt | 10.0 |
+| Pipeline | Stage | 7.2.1 rocBLAS (single) | 7.2.1 +hipBLASLt (single) | 10.0 (median of 5) |
 |---|---|--:|--:|--:|
-| Hi3DGen | structure (attention-bound) | 44.1 s | 44.0 s | **26.3 s** |
-| Hi3DGen | slat | 17.1 s | 10.7 s | **9.4 s** |
-| Hi3DGen | whole generation | 69.7 s | 62.9 s | **41.5 s (1.68×)** |
-| TRELLIS | structure | 22.9 s | 22.9 s | **14.3 s** |
-| TRELLIS | slat | 52.4 s | 39.1 s | **32.8 s** |
-| TRELLIS | whole generation | 79.4 s | 66.1 s | **~56 s (1.42×)** |
-| Hunyuan3D | shape | 82.6 s | 80.4 s | **73.2 s (1.13×)** |
+| Hi3DGen | structure (attention-bound) | 44.1 s | 44.0 s | **26.2 s** (26.1–27.0) |
+| Hi3DGen | slat | 17.1 s | 10.7 s | **9.4 s** (8.3–9.5) |
+| Hi3DGen | whole generation | 69.7 s | 62.9 s | **39.0 s (1.79×)** (38.2–39.3) |
+| TRELLIS | conditioning | 1.1 s | — | 0.8 s (0.8–0.9) |
+| TRELLIS | structure | 22.9 s | 22.9 s | **13.8 s** (13.8–14.0) |
+| TRELLIS | slat | 52.4 s | 39.1 s | **32.0 s** (31.9–32.1) |
+| TRELLIS | whole generation | 79.4 s | 66.1 s | **49.6 s (1.60×)** (49.4–49.8) |
+| Hunyuan3D | shape | 82.6 s | 80.4 s | **73.1 s (1.13×)** (73.0–73.3) |
 
-The attention-bound structure stages nearly halved (newer AOTriton flash
-kernels), and the sparse-conv skinny GEMM fix carried over. One open item:
-TRELLIS's conditioning stage grew from ~1 s to ~5 s on the new stack —
-unexplained, small, noted for later.
+The attention-bound structure stages nearly halved — that is the newer
+AOTriton flash kernels ([attention.md](attention.md)), not GEMM — and the
+sparse-conv skinny GEMM fix carried over. An apparent regression resolved
+itself along the way: TRELLIS's conditioning stage read ~5 s on the first
+runs after the upgrade, which turned out to be MIOpen 3.6.0's one-time
+tuning of the DINOv2 convolutions; with the tuning cache in place it is back
+to 0.8 s.
 
 ## A caution about profiling on torch 2.13
 
-The per-op profiler on this build double-counts calls (counts exactly 2× per
-op, per-shape TFLOPS come out above the hardware ceiling). Stage walls and
-`bench_gemm.py` device-event timings are unaffected and are what the tables
-above use. Do not trust `torch.profiler` per-op device time on this stack
-without revalidating it.
+On this build, running `torch.profiler` **with a `TorchDispatchMode` active**
+double-counts every op (exactly 2× per call; per-shape TFLOPS then come out
+above the hardware ceiling). The profiler alone counts correctly — minimal
+repro: 100 `torch.mm` calls report `count=100` bare, `count=200` under a
+pass-through dispatch mode; torch 2.9.1 counted correctly in both cases.
+Stage walls and `bench_gemm.py` device-event timings are unaffected and are
+what the tables above use.

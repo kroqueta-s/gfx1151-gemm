@@ -33,7 +33,12 @@ import json
 import os
 import sys
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from gpuclock import ClockWatch  # noqa: E402
 
 DTYPES = {"fp16": "float16", "bf16": "bfloat16", "fp32": "float32"}
 
@@ -164,16 +169,19 @@ def main() -> int:
 
     layouts = ("nn", "nt") if args.layout == "both" else (args.layout,)
     results = []
-    for m, n, k, batch, dtype_name in shapes:
-        for layout in layouts:
-            r = bench_one(m, n, k, batch, dtype_name, args.warmup, args.iters, args.blocks, layout)
-            results.append(r)
-            print(
-                f"M={m} N={n} K={k} B={batch} {dtype_name} {layout}: "
-                f"median {r['median_tflops']} TFLOPS "
-                f"(range {r['min_tflops']}-{r['max_tflops']}, blocks {r['blocks_tflops']})",
-                flush=True,
-            )
+    with ClockWatch() as watch:
+        for m, n, k, batch, dtype_name in shapes:
+            for layout in layouts:
+                r = bench_one(
+                    m, n, k, batch, dtype_name, args.warmup, args.iters, args.blocks, layout
+                )
+                results.append(r)
+                print(
+                    f"M={m} N={n} K={k} B={batch} {dtype_name} {layout}: "
+                    f"median {r['median_tflops']} TFLOPS "
+                    f"(range {r['min_tflops']}-{r['max_tflops']}, blocks {r['blocks_tflops']})",
+                    flush=True,
+                )
 
     run = {
         "date": datetime.now(UTC).isoformat(timespec="seconds"),
@@ -182,6 +190,7 @@ def main() -> int:
         "torch": torch.__version__,
         "hip": torch.version.hip,
         "preferred_blas": preferred,
+        "clock": watch.summary(),
         "env": {
             k: v
             for k, v in sorted(os.environ.items())
