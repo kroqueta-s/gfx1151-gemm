@@ -29,6 +29,10 @@ local LLMs included.
 - [`docs/hipblaslt.md`](docs/hipblaslt.md) — rocBLAS against hipBLASLt on the
   shapes those pipelines actually run: the Lt path works on gfx1151 under
   Windows, wins by 8× on skinny GEMMs, and loses on fat ones.
+- [`docs/rocm10.md`](docs/rocm10.md) — the ROCm 10.0 wheels: four install
+  traps (Smart App Control, kernel-pack device packages, torchvision,
+  MIOpen batch norm), and the measurements after the upgrade (1.13–1.68×
+  end to end).
 
 ## What is known about gfx1151 on Windows
 
@@ -56,6 +60,10 @@ fp16 square GEMM through `torch.mm`, keepalive on, 2026-09-02:
 |---|--:|
 | 2048³ | ~24 |
 | 4096³ | ~31 |
+
+On the ROCm 10.0 wheels the default path reaches ~30 TFLOPS across the same
+shapes — including the ones rocBLAS 7.2.1 ran at 1.8 — and hipBLASLt
+preference stops mattering; see [`docs/rocm10.md`](docs/rocm10.md).
 
 The paper number for this silicon (59.4 TFLOPS fp16) is a clock calculation,
 not a measurement. Hand-tuned WMMA HIP kernels reach 41–46 TFLOPS at 4096³ on
