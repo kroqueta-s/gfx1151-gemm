@@ -25,9 +25,10 @@ exception; assume whoever runs this reads English.
 2. **A comparison is only valid within one environment.** Numbers taken under
    different ROCm/torch versions are never put in the same table without
    saying so.
-3. **Record the GPU clock context with every measurement.** On this hardware
-   the clock depends on whether anything renders (600 MHz against 2.3-2.9 GHz);
-   a reference GEMM taken alongside is the cheapest honest proxy.
+3. **Record the GPU clock with every measurement.** It idles near 700 MHz and
+   ramps above 2.3 GHz at the driver's discretion; `gpuclock.py` reads it
+   straight from the driver, and a reference GEMM alongside is the cheap
+   cross-check.
 4. **No model names in code.** Shapes are data; a harness takes them as input.
 5. **Third-party code stays in `third_party/`,** with its LICENSE unmodified
    and the pinned upstream commit stated in the README.

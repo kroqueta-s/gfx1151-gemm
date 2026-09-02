@@ -20,9 +20,12 @@ local LLMs included.
 - [`bench_gemm.py`](bench_gemm.py) — GEMM microbenchmark (device-event timing,
   warmup + timed blocks, median and range). Shapes are arguments; nothing is
   hard-coded.
-- [`gfxlight.py`](gfxlight.py) — clock keepalive: a hidden render loop that
-  stops the Windows driver from parking the GPU at 600 MHz during compute
-  (see below). Run it alongside any benchmark or workload.
+- [`gpuclock.py`](gpuclock.py) — reads the live GPU clock, activity and power
+  straight from the AMD driver's own `atiadlxx.dll` (no third-party tool, no
+  unsigned binary). Every measurement here carries its output as evidence.
+- [`gfxlight.py`](gfxlight.py) — a hidden render loop, kept as an experiment
+  switch for testing whether a machine's power management treats compute-only
+  work differently. On this machine it currently changes nothing (see below).
 - [`docs/profiles.md`](docs/profiles.md) — measured GEMM profiles of the three
   3D-generation pipelines named above, and how much their dominant shapes
   overlap.
@@ -41,20 +44,20 @@ of dedicated VRAM, Windows 11, driver with ROCm 7.2.1 support, torch
 2.9.1+rocm7.2.1 — in September 2026. Re-measure before trusting any of it in a
 different environment.
 
-### The GPU idles at 600 MHz unless something renders
+### The clock moves, so record it with every number
 
-The AMD Windows driver does not raise the GPU power state for compute-only
-work: at 99 % compute utilisation the clock sits at **600 MHz** (measured
-2026-09-01: 4.8 TFLOPS on a GEMM that reaches 20.9 TFLOPS at 2.35 GHz, a 4.3×
-difference). Any live 3D rendering — including a hidden window — raises it.
-`gfxlight.py` exists for exactly this; keep it alive while measuring anything,
-and record a reference GEMM next to every measurement so a clock drop cannot
-masquerade as a regression. **Every number in this repository was taken with
-the keepalive on.**
+Measured 2026-09-03 with [`gpuclock.py`](gpuclock.py) (which reads the
+driver's own PM sensors): the GPU idles at 709–745 MHz and reaches
+**2.39 GHz** under compute-only GEMM load — no rendering required. A render
+loop alive alongside (`gfxlight.py`) changes neither the clock nor GEMM
+throughput (A/B/A: 31.7 / 32.3 / 31.8 TFLOPS at 4096³). Because power
+management is driver- and state-dependent, **every measurement in this
+repository carries clock evidence**: a reference GEMM before and after, and
+where it matters, a `gpuclock.py` trace.
 
 ### What rocBLAS delivers (the baseline to beat)
 
-fp16 square GEMM through `torch.mm`, keepalive on, 2026-09-02:
+fp16 square GEMM through `torch.mm`, 2026-09-02:
 
 | Shape | rocBLAS TFLOPS |
 |---|--:|

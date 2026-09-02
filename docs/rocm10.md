@@ -48,7 +48,7 @@ pip install "torch==2.13.0+rocm10.0.0" "torchvision==0.28.0+rocm10.0.0" `
 ## GEMM: the default path caught up with hipBLASLt
 
 Same [`bench_gemm.py`](../bench_gemm.py) method as
-[hipblaslt.md](hipblaslt.md), keepalive on. On ROCm 10.0 the numbers with and
+[hipblaslt.md](hipblaslt.md). On ROCm 10.0 the numbers with and
 without `TORCH_BLAS_PREFER_HIPBLASLT=1` agree within noise — the pathological
 rocBLAS cases are gone from the default path. Selected medians (fp16, layout
 that the pipelines use):
@@ -73,8 +73,8 @@ Reference GEMM alongside every run: 30.2–30.4 at 2048³, 30.6–30.9 at 4096³
 
 ## End to end: 1.13–1.68× per pipeline
 
-Second-run stage walls (first runs pay MIOpen tuning), keepalive on,
-hipBLASLt preference on (harmless here, still needed on 7.2.1):
+Second-run stage walls (first runs pay MIOpen tuning), hipBLASLt preference
+on (harmless here, still needed on 7.2.1):
 
 | Pipeline | Stage | 7.2.1 rocBLAS | 7.2.1 +hipBLASLt | 10.0 |
 |---|---|--:|--:|--:|

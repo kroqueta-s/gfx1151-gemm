@@ -15,10 +15,10 @@ Method, chosen to survive this hardware's quirks:
   calls, each block timed with device events. The result is the **median block
   and the min-max range** — a single peak says nothing on a machine whose
   clock moves.
-- **The GPU clock is part of the result.** On gfx1151 under Windows the clock
-  sits at 600 MHz unless something renders (measured 2026-09-01: 4.8 against
-  20.9 TFLOPS on the same GEMM). Keep a render loop alive while benchmarking,
-  and treat a run whose blocks disagree wildly as a clock artifact.
+- **The GPU clock is part of the result.** It idles near 700 MHz and ramps
+  above 2.3 GHz under load, at the driver's discretion. Record it alongside
+  every run (`gpuclock.py` reads it straight from the driver) and treat a run
+  whose blocks disagree wildly as a clock artifact.
 - `--env KEY=VALUE` is applied **before torch is imported**, because BLAS
   backend selection reads the environment at import time.
 

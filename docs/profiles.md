@@ -2,8 +2,8 @@
 
 **Environment (identical for all three):** Strix Halo (Radeon 8060S, gfx1151,
 32 GB dedicated VRAM), Windows 11, ROCm 7.2.1, torch 2.9.1+rocm7.2.1,
-Python 3.12.10, `TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL=1`, clock keepalive
-on, rocBLAS backend (no hipBLASLt), measured 2026-09-02. Reference fp16 GEMM
+Python 3.12.10, `TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL=1`, rocBLAS backend
+(no hipBLASLt), measured 2026-09-02. Reference fp16 GEMM
 alongside every run: 21–25 TFLOPS at 2048³, 29–31 TFLOPS at 4096³.
 
 **How:** each runner's `tools/profile_gemm.py` — one unprofiled generation for
