@@ -3,7 +3,7 @@
 The pipelines profiled in [profiles.md](profiles.md) spend more device time
 in attention than in GEMM (Hi3DGen's dominant stage is 54 % attention), so
 the attention ceiling matters at least as much as the GEMM one. Measured
-2026-09-03 with [`bench_sdpa.py`](../bench_sdpa.py): fp16
+2026-09-02 with [`bench_sdpa.py`](../bench_sdpa.py): fp16
 `F.scaled_dot_product_attention`, AOTriton flash backend
 (`TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL=1`), torch 2.13.0+rocm10.0.0, on
 the same machine as everything here (ASUS ProArt PX13, Ryzen AI MAX+ 395,

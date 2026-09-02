@@ -67,7 +67,7 @@ Re-measure before trusting any of it in a different environment.
 
 ### The clock moves, so record it with every number
 
-Measured 2026-09-03 with [`gpuclock.py`](gpuclock.py) (which reads the
+Measured 2026-09-02 with [`gpuclock.py`](gpuclock.py) (which reads the
 driver's own PM sensors): the GPU idles at 709–745 MHz and reaches
 **2.39 GHz** under compute-only GEMM load — no rendering required. A render
 loop alive alongside (`gfxlight.py`) changes neither the clock nor GEMM

@@ -7,7 +7,7 @@ in this repository: 5 processes × 5 blocks × 100 calls, medians, clock
 recorded by [`gpuclock.py`](../gpuclock.py). Environment: ASUS ProArt PX13
 (HN7306EA-AI9641W) — Ryzen AI MAX+ 395, Radeon 8060S (gfx1151, 40 CU) —
 **a 13-inch laptop at its factory power limits**, torch 2.13.0+rocm10.0.0,
-Windows 11, measured 2026-09-03.
+Windows 11, measured 2026-09-02.
 
 ## It is not bandwidth
 
@@ -101,3 +101,13 @@ Cross-checks:
   instruction stream reaches it. What might is the platform firmware/driver
   itself (the plausible source of the Linux 41.3 gap), which is outside
   anything a kernel controls.
+- **Decision (2026-09-02): the hand-written kernel was not attempted.** The
+  projected best case grazes the bar that would justify shipping it, the
+  DVFS behaviour above pushes the expectation below that bar, and the two
+  things that would actually move the ceiling — driver DVFS policy and
+  attention efficiency ([attention.md](attention.md)) — are not GEMM
+  kernels. A negative result, published as one.
+- Cross-check on the policy: switching the **Windows power plan** (custom
+  Performance / Balanced / even Power saver) does not move GEMM throughput
+  at all (31.2 / 31.5 / 32.3 TFLOPS, same clock band) — the operating point
+  is chosen by the AMD driver/SMU, not by the OS power plan.
