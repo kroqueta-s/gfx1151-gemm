@@ -9,6 +9,11 @@ recorded by [`gpuclock.py`](../gpuclock.py). Environment: ASUS ProArt PX13
 **a 13-inch laptop at its factory power limits**, torch 2.13.0+rocm10.0.0,
 Windows 11, measured 2026-09-02.
 
+One scope note: everything on this page is the **display-on** world. With
+the console display off, the driver pins the GPU near 600 MHz regardless of
+workload — a separate phenomenon with its own page,
+[displayoff.md](displayoff.md).
+
 ## It is not bandwidth
 
 - Device bandwidth ([`bench_membw.py`](../bench_membw.py), 1 GiB fp32

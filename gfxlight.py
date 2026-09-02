@@ -5,9 +5,12 @@ Windows drivers decide the GPU power state, and whether compute-only work is
 enough to raise it can depend on driver version and session state. This loop
 is the A of an A/B experiment: run any benchmark with and without it and
 compare, with `gpuclock.py` reading the clock as evidence. **Measured
-2026-09-02 on this machine (unlocked session, ROCm 10.0 wheels): no effect**
-— the GPU reaches 2.39 GHz for compute alone, and GEMM throughput is
-identical with the loop alive (A/B/A at 4096³: 31.7 / 32.3 / 31.8 TFLOPS).
+2026-09-02 on this machine: no effect in any state.** With the display on
+there is nothing to fix (compute alone reaches 2.39 GHz; A/B/A at 4096³:
+31.7 / 32.3 / 31.8 TFLOPS), and with the display off — the condition it was
+built for — the GPU stays pinned at 600 MHz with the loop alive. The
+countermeasure that works is keeping the display awake
+(`SetThreadExecutionState(ES_DISPLAY_REQUIRED)`); see docs/displayoff.md.
 
 **Design**: written with ctypes only (no extra packages, no self-built binaries,
 so Smart App Control has nothing to block). It runs as a child process and exits

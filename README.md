@@ -32,8 +32,9 @@ local LLMs included.
   straight from the AMD driver's own `atiadlxx.dll` (no third-party tool, no
   unsigned binary). Every measurement here carries its output as evidence.
 - [`gfxlight.py`](gfxlight.py) — a hidden render loop, kept as an experiment
-  switch for testing whether a machine's power management treats compute-only
-  work differently. On this machine it currently changes nothing (see below).
+  switch for power-management tests. Measured: it changes nothing on this
+  machine in any state — including the display-off state it was originally
+  built for ([`docs/displayoff.md`](docs/displayoff.md)).
 - [`docs/profiles.md`](docs/profiles.md) — measured GEMM profiles of the three
   3D-generation pipelines named above, and how much their dominant shapes
   overlap.
@@ -51,6 +52,10 @@ local LLMs included.
 - [`docs/attention.md`](docs/attention.md) — the flash-attention side of the
   same question: 19–24 TFLOPS, flat in sequence length, ~55 % of the
   clock-adjusted peak.
+- [`docs/displayoff.md`](docs/displayoff.md) — **turn the display off and
+  the GPU pins at 600 MHz** (4× slower), by any route: lid, timeout, with
+  or without lock. What helps (`ES_DISPLAY_REQUIRED`, one injected input)
+  and what does not (render loops, power plans).
 
 ## What is known about gfx1151 on Windows
 
@@ -65,16 +70,26 @@ inside the envelope, so the clocks that set every ceiling here are DVFS
 *policy*, not the chassis cap ([`docs/ceiling.md`](docs/ceiling.md)).
 Re-measure before trusting any of it in a different environment.
 
-### The clock moves, so record it with every number
+### The display off switch costs 4×, and the clock moves — record both
 
-Measured 2026-09-02 with [`gpuclock.py`](gpuclock.py) (which reads the
-driver's own PM sensors): the GPU idles at 709–745 MHz and reaches
-**2.39 GHz** under compute-only GEMM load — no rendering required. A render
-loop alive alongside (`gfxlight.py`) changes neither the clock nor GEMM
-throughput (A/B/A: 31.7 / 32.3 / 31.8 TFLOPS at 4096³). Because power
-management is driver- and state-dependent, **every measurement in this
-repository carries clock evidence**: a reference GEMM before and after, and
-where it matters, a `gpuclock.py` trace.
+Two distinct facts, both measured with [`gpuclock.py`](gpuclock.py)
+(2026-09-02):
+
+- **While the console display is on**, the GPU idles at 709–745 MHz and
+  reaches 2.39 GHz under compute-only GEMM — no rendering required, and a
+  render loop alongside changes nothing (A/B/A: 31.7 / 32.3 / 31.8 TFLOPS
+  at 4096³).
+- **The moment the display goes off** — lid closed, or the display-off
+  timeout, locked or not — **the driver pins the GPU near 600 MHz and GEMM
+  drops to ~8 TFLOPS**, until the display comes back. Unattended compute on
+  this platform runs at quarter speed unless the display is kept awake;
+  `SetThreadExecutionState(ES_DISPLAY_REQUIRED)` prevents it completely.
+  The full story, including what was mis-attributed along the way, is in
+  [`docs/displayoff.md`](docs/displayoff.md).
+
+Because power management is driver- and state-dependent, **every
+measurement in this repository carries clock evidence**: a reference GEMM
+before and after, and where it matters, a `gpuclock.py` trace.
 
 ### GEMM: the floor moved, the ceiling did not
 
