@@ -74,8 +74,8 @@ standby machinery.
   fixed ~600 MHz clock under two different libraries.
 - Reproduced on the current driver, so this is not fixed by updating
   Adrenalin 26.8.1; whether it is intended power management or a bug is a
-  question for AMD. In the pinned state the GFX rail reads single digits of
-  watts — this is a hard clock floor, not the sustained power limit that
-  caps display-on performance ([ceiling.md](ceiling.md)).
+  question for AMD. In the pinned state the package draws ~22 W and the GFX
+  rail single digits — a hard clock floor far below the 70 W sustained
+  limit that caps display-on performance ([ceiling.md](ceiling.md)).
 - Every other measurement in this repository was taken with the display on;
   the ceilings in [ceiling.md](ceiling.md) describe the display-on world.

@@ -147,6 +147,35 @@ Cross-checks:
 - Cross-check: switching the **Windows power plan** (custom Performance /
   Balanced / even Power saver) does not move GEMM throughput at all
   (31.2 / 31.5 / 32.3 TFLOPS, same clock band) — **the OS power plan does
-  not change the PPT limits.** Those are set by the OEM firmware, and
-  possibly by the vendor's performance modes, which have not been tested
-  here yet.
+  not change the PPT limits.** Those are set by the OEM firmware and the
+  vendor's performance modes, which were then tested (below).
+
+## The vendor performance modes move the limit — and Performance is already the top
+
+Measured 2026-09-03: sustained 4096³ GEMM running continuously while the
+operator cycled MyASUS performance modes, package power and clock sampled
+at 1 Hz (each mode held ≥60 s; the pinned package value *is* the effective
+sustained limit):
+
+| Mode | Sustained package | GFX clock | 4096³ fp16 | TFLOPS per W |
+|---|--:|--:|--:|--:|
+| Whisper | 40 W | ~1 070 MHz | 18.0 | 0.45 |
+| Standard | 55 W | ~1 590 MHz | 26.1 | 0.47 |
+| Windows mode | 55 W | ~1 600 MHz | 26.0 | 0.47 |
+| **Performance** | **70 W** | ~1 920–1 940 MHz | **29.8–30.0** | 0.43 |
+
+Three things fall out:
+
+- **There is no mode above 70 W.** Performance — the mode every number in
+  this repository was measured under — is already this chassis's maximum
+  sustained budget. The hoped-for official route to the high 30s does not
+  exist on the PX13.
+- **The boost window shows what an 85 W sustained limit would buy.** At
+  each entry into Performance the package spends a few seconds at 82–84 W
+  (PPT-fast) before settling: 2.06 GHz, **32.3 TFLOPS**. Even a machine
+  that sustained this chassis's boost budget indefinitely would sit at
+  ~32 — still under the 33 bar the kernel decision used. The high 30s
+  genuinely require a bigger-budget chassis.
+- The power-to-throughput curve (40 W → 18, 55 W → 26, 70 W → 30) bends at
+  the top; per-watt, **Standard is the sweet spot** (0.47 TF/W) — worth
+  knowing for battery or thermally constrained runs.
