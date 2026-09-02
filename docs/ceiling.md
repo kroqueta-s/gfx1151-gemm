@@ -7,7 +7,8 @@ in this repository: 5 processes × 5 blocks × 100 calls, medians, clock
 recorded by [`gpuclock.py`](../gpuclock.py). Environment: ASUS ProArt PX13
 (HN7306EA-AI9641W) — Ryzen AI MAX+ 395, Radeon 8060S (gfx1151, 40 CU) —
 **a 13-inch laptop at its factory power limits**, torch 2.13.0+rocm10.0.0,
-Windows 11, measured 2026-09-02.
+Windows 11. Benchmarks measured 2026-09-02; the two-source power
+verification below, 2026-09-03.
 
 One scope note: everything on this page is the **display-on** world. With
 the console display off, the driver pins the GPU near 600 MHz regardless of
@@ -38,8 +39,8 @@ The marketing figure for this silicon — 59.4 TFLOPS fp16 — assumes 2.9 GHz
 (40 CU × 512 fp16 FLOP/CU/cycle = 20.48 TFLOPS per GHz). The GPU does reach
 2.9 GHz: `gpuclock.py` recorded 2 900 MHz peaks during TRELLIS generation
 (mixed attention/GEMM/elementwise work). **But under sustained dense GEMM the
-driver holds it much lower: median 1 914 MHz, max 2 126 MHz, at 18–25 W GPU
-power, across the whole K sweep.**
+driver holds it much lower: median 1 914 MHz, max 2 126 MHz, at 18–25 W on
+the GFX rail, across the whole K sweep.**
 
 **What holds the clock there is the chassis's sustained power limit.** An
 earlier revision of this page claimed otherwise from a single sensor; a
@@ -55,6 +56,17 @@ phases of idle / 5-min GEMM / flash attention / CPU-only):
 | **GEMM 4096³ (5 min)** | 1 940 MHz | 19 W | **69 / 70.0 W** | **100 %** |
 | **flash attention** | 2 087 MHz | 34 W | **70 / 70.0 W** | **100 %** |
 | CPU-only load | — | 3 W | 47 / 47 W | 69 % |
+
+(The limit-usage counters are windowed averages in the STAPM style, not
+instantaneous readings — the off-peak rows do not divide out to exactly one
+limit value, and are not expected to.)
+
+The subtraction the table invites is worth doing explicitly. During GEMM
+the package draws 70 W while the GFX rail takes 19 W — with the CPU near
+idle, **roughly 51 W (~70 %) is burning outside the GFX rail**: SoC,
+fabric, LPDDR5X. Attention leaves ~36 W outside. This does not contradict
+the K sweep's compute-bound verdict — the *limiter* is the matrix units,
+but the *watts* are spent mostly in the memory system feeding them.
 
 Both GEMM and attention run with **PPT-slow pinned at exactly 100 %** and
 the package flat at 70 W; TDC (62 %), EDC (45 %) and thermal (62 %) all
@@ -73,8 +85,11 @@ as this chassis's sustained one (AMD's chip-level range is
   attention 2.09 GHz, mixed bursts to 2.9) are power physics: denser work
   costs more per cycle, so it clocks lower inside the same 70 W.
 - For kernels the currency changes: **at a fixed 70 W, throughput gains are
-  energy-efficiency gains** (FLOPs per joule). Raising utilization without
-  raising efficiency lowers the clock and hands the gain back.
+  energy-efficiency gains** (FLOPs per joule) — and given where the watts
+  go, that concretely means **reducing memory traffic so power can shift
+  from the memory system to the GFX rail**, not keeping the matrix units
+  busier. Raising utilization without cutting traffic lowers the clock and
+  hands the gain back.
 
 The *method* (log package power and the limit-usage counters alongside the
 clock) transfers to any Strix Halo machine; the 70 W, the 1.9 GHz and the
@@ -122,12 +137,16 @@ Cross-checks:
   that genuinely does more FLOPs per joule — not one that merely keeps the
   units busier.
 - **Decision (2026-09-02): the hand-written kernel was not attempted.** The
-  projected best case grazes the bar that would justify shipping it, the
-  DVFS behaviour above pushes the expectation below that bar, and the two
-  things that would actually move the ceiling — driver DVFS policy and
-  attention efficiency ([attention.md](attention.md)) — are not GEMM
-  kernels. A negative result, published as one.
-- Cross-check on the policy: switching the **Windows power plan** (custom
-  Performance / Balanced / even Power saver) does not move GEMM throughput
-  at all (31.2 / 31.5 / 32.3 TFLOPS, same clock band) — the operating point
-  is chosen by the AMD driver/SMU, not by the OS power plan.
+  projected best case grazes the bar that would justify shipping it, and
+  the power accounting above pushes the expectation below that bar.
+  Re-examined after the 2026-09-03 power verification: the attribution of
+  the wall changed (power limit, not driver policy), the decision does not
+  — the routes that move the ceiling are the power budget and per-joule
+  efficiency, and neither is a GEMM instruction stream. A negative result,
+  published as one.
+- Cross-check: switching the **Windows power plan** (custom Performance /
+  Balanced / even Power saver) does not move GEMM throughput at all
+  (31.2 / 31.5 / 32.3 TFLOPS, same clock band) — **the OS power plan does
+  not change the PPT limits.** Those are set by the OEM firmware, and
+  possibly by the vendor's performance modes, which have not been tested
+  here yet.
