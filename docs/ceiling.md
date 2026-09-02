@@ -36,12 +36,33 @@ The marketing figure for this silicon — 59.4 TFLOPS fp16 — assumes 2.9 GHz
 driver holds it much lower: median 1 914 MHz, max 2 126 MHz, at 18–25 W GPU
 power, across the whole K sweep.**
 
-That 18–25 W is this machine speaking, not the architecture: the PX13 is a
-13-inch convertible and its firmware runs the chip at ASUS's stock power
-limits (unmodified here). Strix Halo is shipped in chassis with far larger
-power budgets, so a bigger machine should sustain higher clocks and land
-this whole analysis at different numbers — the *method* (measure the
-sustained clock, multiply by 20.48 TFLOPS/GHz) transfers; the 39 does not.
+What that 18–25 W is *not* is the chassis limit. The primary sources: ASUS
+configures this laptop's SoC at **up to 85 W** for the Ryzen AI MAX+ 395
+("Up to 85 W TDP" on the [product page][asus-px13], CPU+GPU combined;
+[tech specs][asus-spec] list a 200 W adapter), against AMD's
+[default 55 W / cTDP 45–120 W][amd-395] for the chip — all stock here,
+nothing unlocked. During the sustained-GEMM measurements the CPU was close
+to idle, so even a generous allowance for it leaves the SoC well inside its
+85 W envelope while the GPU's PM-sensor power reads 18–25 W. **The clock is
+therefore being set by a per-domain DVFS policy (SMU/driver) below the
+chassis budget, not by the chassis budget itself.** Two consequences:
+
+- A bigger-chassis Strix Halo machine would not automatically lift this
+  ceiling: it was not the wall being hit. Whether the policy behaves
+  differently at other cTDP configurations is untested here.
+- The clock visibly depends on the *workload's character* — dense WMMA GEMM
+  1.9 GHz, flash attention 2.1 GHz, mixed pipeline work bursting to 2.9 —
+  which is DVFS responding to electrical density, the way power-virus loads
+  always clock lowest. A more efficient kernel raises FLOPs per cycle and
+  can push the operating clock further *down*, partially spending its own
+  gains.
+
+The *method* (measure the sustained clock, multiply by 20.48 TFLOPS/GHz)
+transfers to any Strix Halo machine; the 39 is this platform's number.
+
+[asus-px13]: https://www.asus.com/us/laptops/for-creators/proart/proart-px13-hn7306/
+[asus-spec]: https://www.asus.com/us/laptops/for-creators/proart/proart-px13-hn7306/techspec/
+[amd-395]: https://www.amd.com/en/products/processors/laptop/ryzen/ai-300-series/amd-ryzen-ai-max-plus-395.html
 
 At the measured sustained clock the attainable peak is:
 
@@ -70,9 +91,13 @@ Cross-checks:
   the libraries already at ~77 % of it.**
 - A hand-written WMMA kernel that reaches 85–90 % of the same clock-adjusted
   peak would land at **33–35 TFLOPS** — a real but modest margin over 30,
-  and right at the >33 bar that separates "worth shipping" from "not".
+  and right at the >33 bar that separates "worth shipping" from "not". And
+  that projection is optimistic: DVFS clocks electrically denser work lower
+  (see above), so raising arithmetic efficiency tends to lower the operating
+  clock and hand back part of the gain.
 - Anything near 40 on Windows would have to come from the *clock*, not the
-  kernel: sustaining 2.3–2.4 GHz under WMMA load is worth +20 % by itself.
-  Whether the driver's DVFS can be coaxed there (power limits, workload
-  shaping) is a separate question from GEMM code quality — and nothing in
-  the GEMM instruction stream controls it.
+  kernel — and since the clock is set by SMU/driver policy well inside the
+  chassis power budget, neither a bigger machine nor a better GEMM
+  instruction stream reaches it. What might is the platform firmware/driver
+  itself (the plausible source of the Linux 41.3 gap), which is outside
+  anything a kernel controls.

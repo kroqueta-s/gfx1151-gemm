@@ -57,12 +57,13 @@ local LLMs included.
 Everything below was measured on one machine, in September 2026:
 **ASUS ProArt PX13 (HN7306EA-AI9641W)** — AMD Ryzen AI MAX+ 395 (Strix
 Halo), Radeon 8060S iGPU (gfx1151, 40 CU), 32 GB of dedicated VRAM,
-Windows 11, **a 13-inch laptop running at its factory power limits**
-(nothing unlocked, nothing overclocked). That last part matters: Strix Halo
-ships in machines with very different power budgets, and the sustained
-clocks — and therefore every ceiling derived from them — are properties of
-this chassis, not of the silicon. Re-measure before trusting any of it in a
-different environment.
+Windows 11, **a 13-inch laptop running at its factory power configuration**
+(ASUS runs this CPU at up to 85 W SoC power; AMD's cTDP range is 45–120 W;
+nothing unlocked, nothing overclocked). The power context matters — though
+not in the obvious way: sustained GEMM draws only 18–25 W of GPU power, far
+inside the envelope, so the clocks that set every ceiling here are DVFS
+*policy*, not the chassis cap ([`docs/ceiling.md`](docs/ceiling.md)).
+Re-measure before trusting any of it in a different environment.
 
 ### The clock moves, so record it with every number
 
