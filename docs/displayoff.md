@@ -38,6 +38,7 @@ and the intermediate versions were published here.
 | Locked, **display off** (timeout) | **600–632 MHz** | **7.6–8.5** |
 | **Lid closed** | **600 MHz** | **8.3–8.5** |
 | Lid open, no input past the 60 s timeout | **609–610 MHz** | **7.6** |
+| RDP / remote-desktop sessions (connected, disconnected) | not measured | not measured |
 
 The lock is a bystander; **the display power state is the trigger**, by any
 route. One run shows the whole mechanism end to end: with
