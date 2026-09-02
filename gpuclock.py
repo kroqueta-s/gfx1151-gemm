@@ -38,16 +38,24 @@ import time
 from ctypes import Structure, byref, c_int, c_void_p, windll
 from typing import Any
 
-# ADL_PMLOG_SENSORS indices (ADL SDK, adl_defines.h), cross-checked empirically
-# on this machine: gfx clock 709-745 MHz idle / 2392 under GEMM load, activity
-# 1-2 % idle / 73 % load, power 1-2 W idle / 27 W load. Indices 28/29 look like
-# temperatures (44-45 idle, 66-71 load) but are left unnamed until confirmed.
+# ADL_PMLOG_SENSORS indices, named per the official enum in the ADL SDK's
+# adl_defines.h (GPUOpen display-library) and cross-checked empirically on
+# this machine (gfx clock 709-745 MHz idle / 2392 under load; activity 1-2 %
+# idle / 73 % load; temperatures 44-45 idle / 66-71 load).
+#
+# **`gfx_power_w` (ADL_PMLOG_GFX_POWER) is the GFX core only.** The SoC as a
+# whole is `asic_power_w` (ADL_PMLOG_ASIC_POWER) — on an APU the two differ
+# by tens of watts, and quoting the wrong one flips power-limit conclusions.
 SENSOR_NAMES = {
     1: "gfxclk_mhz",
     2: "memclk_mhz",
     3: "socclk_mhz",
     19: "gfx_activity_pct",
-    30: "power_w",
+    23: "asic_power_w",
+    28: "temp_gfx_c",
+    29: "temp_soc_c",
+    30: "gfx_power_w",
+    34: "cpuclk_mhz",
 }
 
 
@@ -143,7 +151,7 @@ class ClockWatch:
         if not self.samples:
             return {"supported": self._session.ok, "samples": 0}
         out: dict[str, Any] = {"supported": True, "samples": len(self.samples)}
-        for key in ("gfxclk_mhz", "power_w"):
+        for key in ("gfxclk_mhz", "gfx_power_w", "asic_power_w"):
             values = [s[key] for s in self.samples if key in s]
             if values:
                 out[key] = {

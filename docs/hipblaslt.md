@@ -10,7 +10,7 @@ device-event timing, medians reported).
 ## The Lt path engages on this architecture
 
 Contrary to the folk wisdom that Windows hipBLASLt has no gfx1151 kernels: the
-`rocm_sdk_libraries` wheel behind torch 2.9.1+rocm7.2.1 ships a gfx1151
+`rocm-sdk-libraries-custom` wheel behind torch 2.9.1+rocm7.2.1 ships a gfx1151
 hipBLASLt kernel library (95 files), and with
 
 ```

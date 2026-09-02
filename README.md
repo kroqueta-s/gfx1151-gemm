@@ -46,9 +46,9 @@ local LLMs included.
   MIOpen batch norm), and the measurements after the upgrade (1.13–1.79×
   end to end).
 - [`docs/ceiling.md`](docs/ceiling.md) — why every backend stops at
-  ~30 TFLOPS: not bandwidth (K sweep + measured 226 GB/s), but the sustained
-  clock under GEMM load (~1.9 GHz → ~39 TFLOPS attainable, libraries at
-  ~77 % of it).
+  ~30 TFLOPS: not bandwidth (K sweep + measured 226 GB/s), but this
+  chassis's 70 W sustained power limit, which caps the GEMM clock near
+  1.9 GHz (~39 TFLOPS attainable, libraries at ~77 % of it).
 - [`docs/attention.md`](docs/attention.md) — the flash-attention side of the
   same question: 19–24 TFLOPS, flat in sequence length, ~55 % of the
   clock-adjusted peak.
@@ -64,11 +64,13 @@ Everything below was measured on one machine, in September 2026:
 Halo), Radeon 8060S iGPU (gfx1151, 40 CU), 32 GB of dedicated VRAM,
 Windows 11, **a 13-inch laptop running at its factory power configuration**
 (ASUS runs this CPU at up to 85 W SoC power; AMD's cTDP range is 45–120 W;
-nothing unlocked, nothing overclocked). The power context matters — though
-not in the obvious way: sustained GEMM draws only 18–25 W of GPU power, far
-inside the envelope, so the clocks that set every ceiling here are DVFS
-*policy*, not the chassis cap ([`docs/ceiling.md`](docs/ceiling.md)).
-Re-measure before trusting any of it in a different environment.
+nothing unlocked, nothing overclocked). The power context is decisive:
+under sustained GEMM or attention the package sits pinned at this chassis's
+**70 W sustained limit (PPT-slow at 100 %)**, and that limit — boosting to
+~85 W, per ASUS's spec — is what sets every ceiling measured here
+([`docs/ceiling.md`](docs/ceiling.md)). A Strix Halo machine with a bigger
+budget would land elsewhere. Re-measure before trusting any of it in a
+different environment.
 
 ### The display off switch costs 4×, and the clock moves — record both
 
@@ -105,9 +107,9 @@ here, because the same silicon spans 1.8 to 30.8 depending on both):
   general.
 - **The ceiling.** All three backends converge on 25–31 TFLOPS for
   well-proportioned shapes and none exceeds ~31. That is not a bandwidth
-  limit and not far from what the hardware allows: under sustained GEMM the
-  driver holds the clock near 1.9 GHz, which caps the attainable peak at
-  ~39 TFLOPS, and the libraries sit at ~77 % of that
+  limit: under sustained GEMM this chassis pins its 70 W package budget
+  (PPT-slow 100 %), which holds the clock near 1.9 GHz and caps the
+  attainable peak at ~39 TFLOPS — the libraries sit at ~77 % of that
   ([`docs/ceiling.md`](docs/ceiling.md)).
 
 The paper number for this silicon (59.4 TFLOPS fp16) assumes 2.9 GHz — a
@@ -118,7 +120,7 @@ to power management rather than kernel quality.
 
 ### hipBLASLt ships gfx1151 kernels on Windows 7.2.1
 
-The `rocm_sdk_libraries` wheel that backs torch 2.9.1+rocm7.2.1 carries a
+The `rocm-sdk-libraries-custom` wheel that backs torch 2.9.1+rocm7.2.1 carries a
 hipBLASLt kernel library for gfx1151 (95 files, alongside gfx110x/gfx120x).
 The Lt path actually engages, and what it is worth is measured in
 [`docs/hipblaslt.md`](docs/hipblaslt.md). Torch selects it with
