@@ -55,6 +55,17 @@ out and the clock lands at 609 MHz within the next probe.
 | Injecting one 1-px mouse move (`SendInput`) | **Instant rescue**: display wakes to the lock screen and the very next probe reads 30.8 TFLOPS, still locked. |
 | Unlocking | Works (it wakes the display). |
 
+## It is not Modern Standby
+
+This is an S0 Low Power Idle (Modern Standby) machine, which made the OS's
+screen-off power phase the obvious suspect. Tested 2026-09-03: with Modern
+Standby disabled (`PlatformAoAcOverride=0`, value verified in the same log,
+after a reboot, probing from a boot-time task), the pin still occurred —
+607–633 MHz / 7.5–8.4 TFLOPS across five probes in two locked/display-off
+windows, full speed whenever the console was unlocked in between. The
+trigger lives in the driver's own display-state handling, not in the OS
+standby machinery.
+
 ## Notes
 
 - The numbers 4.8 (09-01) and 7.6–8.5 (09-02) come from different stacks
